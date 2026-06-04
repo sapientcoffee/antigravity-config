@@ -11,19 +11,26 @@ eval "$(echo "$DATA" | jq -r '
   "PROJECT_DIR=\"" + (.workspace.project_dir // "") + "\"",
   "BRANCH=\"" + (.vcs.branch // "") + "\"",
   "USED_PCT=\"" + ((.context_window.used_percentage // 0) | tostring) + "\"",
-  "TASK_COUNT=\"" + ((.task_count // 0) | tostring) + "\"",
-  "SUBAGENTS_COUNT=\"" + ((if .subagents | type == "array" then (.subagents | length) else 0 end) | tostring) + "\""
-' 2>/dev/null || echo 'STATE="idle" CWD="" PROJECT_DIR="" BRANCH="" USED_PCT="0" TASK_COUNT="0" SUBAGENTS_COUNT="0"')"
+  "TASK_COUNT=\"" + ((if .background_tasks | type == "array" then (.background_tasks | length) else (.task_count // 0) end) | tostring) + "\"",
+  "SUBAGENTS_COUNT=\"" + ((if .subagents | type == "array" then (.subagents | length) else 0 end) | tostring) + "\"",
+  "CONFIRM_PENDING=\"" + ((.tool_confirmation_pending // false) | tostring) + "\"",
+  "PENDING_INPUT=\"" + ((.pending_input_count // 0) | tostring) + "\""
+' 2>/dev/null || echo 'STATE="idle" CWD="" PROJECT_DIR="" BRANCH="" USED_PCT="0" TASK_COUNT="0" SUBAGENTS_COUNT="0" CONFIRM_PENDING="false" PENDING_INPUT="0"')"
 
 # Map state to emoji
-case "$STATE" in
-  initializing) EMOJI="🚀" ;;
-  idle)         EMOJI="😴" ;;
-  thinking)     EMOJI="🤔" ;;
-  working)      EMOJI="⚙️" ;;
-  tool_use)     EMOJI="🔧" ;;
-  *)            EMOJI="🤖" ;;
-esac
+if [ "$CONFIRM_PENDING" = "true" ]; then
+  EMOJI="🚨"
+  STATE="CONFIRM_REQ"
+else
+  case "$STATE" in
+    initializing) EMOJI="🚀" ;;
+    idle)         EMOJI="😴" ;;
+    thinking)     EMOJI="🤔" ;;
+    working)      EMOJI="⚙️" ;;
+    tool_use)     EMOJI="🔧" ;;
+    *)            EMOJI="🤖" ;;
+  esac
+fi
 
 # Try to format CWD elegantly using Project-Relative paths
 DIR_STR=""
@@ -74,13 +81,16 @@ fi
 # Format used percentage
 PCT_FMT=$(LC_NUMERIC=C printf "%.1f" "$USED_PCT")
 
-# Format task and subagent indicators
+# Format task, subagent, and pending inputs indicators
 TASKS_STR=""
 if [ "$TASK_COUNT" -gt 0 ]; then
   TASKS_STR=" ⚙️$TASK_COUNT"
 fi
 if [ "$SUBAGENTS_COUNT" -gt 0 ]; then
   TASKS_STR="$TASKS_STR 👥$SUBAGENTS_COUNT"
+fi
+if [ "$PENDING_INPUT" -gt 0 ]; then
+  TASKS_STR="$TASKS_STR ✉️$PENDING_INPUT"
 fi
 
 # Build the final title (No model name, state-focused, project-focused, compact directory, active tasks)
