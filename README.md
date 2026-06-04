@@ -36,6 +36,11 @@ Rather than relying on basic ANSI 16-color escapes, we utilize **truecolor (RGB)
 *   **💻 System Performance Stats:** Real-time system monitoring:
     *   `󰍛 % RAM` (parsed directly from `/proc/meminfo` via zero-overhead Bash built-ins)
     *   `󰋊 % DISK` (monitors disk space/quota on `/`)
+*   **🛠️ AI Resources & Workspace Context Tracking:** Real-time visibility into your AI enablement workspace:
+    *   `🎓 skills`: Total available skills dynamically scanned from active plugins (e.g. `🎓 32`).
+    *   `🔌 mcp`: Total active/configured MCP server endpoints (e.g. `🔌 4`).
+    *   `📁 files`: Real-time ratio of modified context files vs total tracked workspace files (e.g. `📁 6/44`).
+    *   `👥 subagents`: Active session subagents displayed as a ratio of active jobs to total available subagent types (e.g. `👥 1/2`).
 *   **🆔 Identity & Sandboxing:** Clear badges indicating Sandbox state (` ON` / ` OFF`), first-8 digits of your AI session UUID (`🆔 7316533b`), and VM hostname.
 *   **🖥️ Space-Saving Tab Titles:** An upgraded terminal window/tab title showing `Emoji State | Contracted-Directory (Branch) | ctx % [Background-Jobs]`. **Completely model-less** to save massive space in horizontal splits.
 *   **⚡ Zero-Latency Performance:** High-performance design. The statusline and title scripts extract all session metadata in a **single `jq` invocation**, utilizing pure Bash arithmetic for all calculations to prevent terminal lag during fast commands.
