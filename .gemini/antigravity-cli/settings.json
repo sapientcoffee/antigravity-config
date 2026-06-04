@@ -1,0 +1,34 @@
+{
+  "editor": "vim",
+  "gcp": {
+    "project": "your-gcp-project",
+    "location": "global"
+  },
+  "model": "Gemini 3.5 Flash (High)",
+  "notifications": true,
+  "permissions": {
+    "allow": [
+      "command(npm run)",
+      "command(git status)",
+      "command(git)",
+      "command(/google/bin/releases/gemini-agents-gtasks/gtasks)",
+      "command(uname)",
+      "command(cat)",
+      "command(grep)",
+      "command(ls)"
+    ]
+  },
+  "showFeedbackSurvey": false,
+  "statusLine": {
+    "type": "command",
+    "command": "~/.gemini/antigravity-cli/statusline.sh",
+    "enabled": true
+  },
+  "title": {
+    "type": "command",
+    "command": "~/.gemini/antigravity-cli/title.sh"
+  },
+  "trustedWorkspaces": [
+    "~/workspace/your-project"
+  ]
+}
