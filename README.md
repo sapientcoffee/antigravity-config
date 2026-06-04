@@ -6,13 +6,30 @@ It is heavily optimized for modern, GPU-accelerated terminal emulators supportin
 
 ---
 
+## 🎨 Design Theme: Catppuccin Mocha Truecolor
+
+Rather than relying on basic ANSI 16-color escapes, we utilize **truecolor (RGB) escape sequences** (`\033[38;2;R;G;Bm`). This guarantees a highly polished, consistent look that matches your Neovim, Tmux, and Starship colorways.
+
+| Color | Hex | Escape Code Prefix | Applied Elements |
+| :--- | :--- | :--- | :--- |
+| **Mauve** | `#cba6f7` | `\033[38;2;203;166;247m` | AI Model Name, Section Highlights |
+| **Green** | `#a6e3a1` | `\033[38;2;166;227;161m` | Ready/Idle State (`😴 idle`), Active Sandbox, Safe Context |
+| **Yellow** | `#f9e2af` | `\033[38;2;249;226;175m` | Thinking State (`🤔 thinking`), Warning Context Limit |
+| **Sky** | `#89dceb` | `\033[38;2;137;220;235m` | Working State (`⚙️ working`), Session Info |
+| **Blue** | `#89b4fa` | `\033[38;2;137;180;250m` | Git Branch, Version Control Repositories |
+| **Red** | `#f38ba8` | `\033[38;2;243;139;168m` | Tool State (`🔧 tool_use`), Critical Context Limit |
+| **Peach** | `#fab387` | `\033[38;2;250;179;135m` | System Stats (RAM Utilization & Disk Space) |
+| **Overlay0**| `#6c7086` | `\033[38;2;108;112;134m` | Dimmed labels, Separators (`│`, `╱`, `·`) |
+
+---
+
 ## ✨ Features
 
-*   **🎨 Truecolor Catppuccin Mocha Theme:** Customized using precise Hex-to-RGB escape sequences, seamlessly blending with standard Mocha terminal/editor themes.
+*   **🎨 Catppuccin Mocha palette:** Native integration with truecolor terminal schemes.
 *   **📂 Direct Path Awareness:** Displays your current directory elegantly in the status bar (e.g. ` ~` or ` ~/workspace/project`), with smart home-directory truncation to save valuable line space.
 *   **🌳 Dual VCS Context (Git & Yadm):** Automatically shows your Git branch and modified file count (` master (3Δ)`). If you are in your home folder, it automatically falls back to tracking **Yadm** dotfile changes!
 *   **🧠 Dynamic Context Bar with Warning Thresholds:**
-    *   **🟢 Green:** Context usage under `35%`
+    *   **🟢 Green (Safe):** Context usage under `35%`
     *   **🟡 Yellow (Warning):** Context usage between `35%` and `50%`
     *   **🔴 Red (Critical):** Context usage at `50%` or above
 *   **󰌨 Live Token Usage:** Displays total accumulated tokens (`󰌨 103.7k in / 38.8k out`) using optimized pure-Bash formatting arithmetic (no external program lag).
@@ -20,8 +37,34 @@ It is heavily optimized for modern, GPU-accelerated terminal emulators supportin
     *   `󰍛 % RAM` (parsed directly from `/proc/meminfo` via zero-overhead Bash built-ins)
     *   `󰋊 % DISK` (monitors disk space/quota on `/`)
 *   **🆔 Identity & Sandboxing:** Clear badges indicating Sandbox state (` ON` / ` OFF`), first-8 digits of your AI session UUID (`🆔 7316533b`), and VM hostname.
-*   **🖥️ Rich Tab Titles:** A fully enriched terminal window/tab title showing `[Model] EMOJI State | Directory (Branch) | ctx %`.
+*   **🖥️ Space-Saving Tab Titles:** An upgraded terminal window/tab title showing `Emoji State | Contracted-Directory (Branch) | ctx % [Background-Jobs]`. **Completely model-less** to save massive space in horizontal splits.
 *   **⚡ Zero-Latency Performance:** High-performance design. The statusline and title scripts extract all session metadata in a **single `jq` invocation**, utilizing pure Bash arithmetic for all calculations to prevent terminal lag during fast commands.
+
+---
+
+## 📐 Responsive Layout Strategy
+
+The bottom status line dynamically shifts layout styles depending on your active terminal size (columns count), which is incredibly helpful when working with multiple horizontal or vertical pane splits.
+
+### 1. Wide Layout (columns >= 120)
+*Single-line complete development dashboard:*
+```text
+● READY ╱  Gemini 3.5 Flash ╱  main (3Δ)  │  ctx █▓░░░ 5.9% (3.8k/0.5k) ·  42% RAM ·  18% DISK ·  ON · 🆔 7316533b ·  localhost
+```
+
+### 2. Medium Layout (columns >= 80 and < 120)
+*Compact double-line framed layout for standard splits:*
+```text
+╭─ ● READY ╱  Gemini 3.5 Flash ╱  main (3Δ)
+╰─ ctx █▓░░░ 5.9% ·  42% ·  18% ·  ON · 🆔 7316533b
+```
+
+### 3. Narrow Layout (columns < 80)
+*Ultra-compact minimalist status line for small tiles:*
+```text
+● READY ╱  main
+ctx 5.9% ·  42%
+```
 
 ---
 
@@ -32,12 +75,22 @@ The files in this repository are structured to mimic their exact destinations in
 ```text
 antigravity-config/
 ├── README.md                      # This documentation guide
+├── docs/
+│   └── adr/
+│       └── 0001-ai-native-terminal-statusline-and-title.md  # Architectural Decision Record (ADR)
 └── .gemini/                       # Destination: ~/.gemini/
     └── antigravity-cli/           # Destination: ~/.gemini/antigravity-cli/
         ├── settings.json          # Antigravity CLI configuration and hook registration
         ├── statusline.sh          # Custom bottom status bar script
         └── title.sh               # Custom window/tab title script
 ```
+
+---
+
+## 📐 Architecture Decision Records (ADRs)
+
+For deep context on why specific code choices, performance trade-offs, and design parameters were made (e.g. single-pass `jq`, pure-Bash math, tab directory compaction), please read:
+*   👉 **[ADR 0001: AI-Native Terminal Statusline and Title Script Architecture](docs/adr/0001-ai-native-terminal-statusline-and-title.md)**
 
 ---
 
@@ -94,4 +147,4 @@ It parses all required parameters in **one pass** to optimize speed:
 It then dynamically checks system stats (`/proc/meminfo` and `df -h /`), counts changes in your workspace using `git status` or `yadm status`, formats numbers with pure arithmetic helper functions, and prints a responsive terminal layout optimized for columns `>=120` (single-line), `>=80` (two-line framed layout), and `<80` (ultra-compact layout).
 
 ### `title.sh`
-This hook dynamically alters your terminal tab name as the agent works, keeping you informed of model state changes even when you are working inside background splits.
+This hook dynamically alters your terminal tab/window name as the agent works. By stripping the model name and compressing intermediate directories (using a smart parent/current format like `[project-name]:…/parent/current`), it keeps you highly informed of model state changes even inside small background split panes.
