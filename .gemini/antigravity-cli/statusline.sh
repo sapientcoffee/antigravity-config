@@ -97,6 +97,33 @@ else
   fi
 fi
 
+# ─── Compute AI Workspace Resources (Skills, MCP, Context Files, Subagents) ──
+# Count available skills
+SKILLS_AVAIL=$(find ~/.gemini/antigravity-cli/plugins/ -mindepth 3 -maxdepth 3 -type d -path "*/skills/*" 2>/dev/null | wc -l || echo 0)
+
+# Count configured MCP servers
+MCP_AVAIL=$(jq -s 'map(.mcpServers | keys) | flatten | length' ~/.gemini/antigravity-cli/plugins/*/mcp_config.json 2>/dev/null || echo 0)
+
+# Subagents types available
+SUBAGENTS_AVAIL=2
+
+# Count context files (available vs dirty/used)
+FILES_DIRTY=0
+FILES_AVAIL=0
+if [ -n "$VCS_BRANCH" ]; then
+  FILES_DIRTY=$(git status --porcelain 2>/dev/null | wc -l || echo 0)
+  FILES_AVAIL=$(git ls-files 2>/dev/null | wc -l || echo 0)
+else
+  if [ "$CWD" = "$HOME" ] && hash yadm 2>/dev/null; then
+    FILES_DIRTY=$(yadm status --porcelain 2>/dev/null | wc -l || echo 0)
+    FILES_AVAIL=$(yadm list 2>/dev/null | wc -l || echo 0)
+  else
+    # Non-repository fallback
+    FILES_DIRTY=0
+    FILES_AVAIL=$(find . -maxdepth 3 -not -path '*/.*' -type f 2>/dev/null | wc -l || echo 0)
+  fi
+fi
+
 # ─── Token Formatting Helper (Pure Bash arithmetic) ──────────────────────────
 format_tokens() {
   local count=$1
@@ -213,8 +240,11 @@ MEM_FMT="${CLR_GRAY}ram ${CLR_PEACH}󰍛 ${MEM_PCT}%${R}"
 DISK_FMT="${CLR_GRAY}disk ${CLR_PEACH}󰋊 ${DISK_PCT}%${R}"
 
 ART_FMT="${CLR_GRAY}artifacts ${CLR_WHITE}${ARTIFACTS}${R}"
-SUB_FMT="${CLR_GRAY}subagents ${CLR_WHITE}${SUBAGENTS}${R}"
+SUB_FMT="${CLR_GRAY}subagents ${CLR_PEACH}👥 ${SUBAGENTS}/${SUBAGENTS_AVAIL}${R}"
 BG_FMT="${CLR_GRAY}tasks ${CLR_WHITE}${BG_TASKS}${R}"
+SKILLS_FMT="${CLR_GRAY}skills ${CLR_MAUVE}🎓 ${SKILLS_AVAIL}${R}"
+MCP_FMT="${CLR_GRAY}mcp ${CLR_SKY}🔌 ${MCP_AVAIL}${R}"
+FILES_FMT="${CLR_GRAY}files ${CLR_BLUE}📁 ${FILES_DIRTY}/${FILES_AVAIL}${R}"
 
 SESSION_STR=""
 if [ -n "$SESSION_ID" ]; then
@@ -234,16 +264,16 @@ DOT="${CLR_GRAY} · ${R}"
 
 # ─── Layout Formatting ────────────────────────────────────────────────────────
 LINE1="${S}${M}${D_STR}${V}"
-LINE2="${CTX}${DOT}${TOK_FMT}${DOT}${MEM_FMT}${DOT}${DISK_FMT}${DOT}${ART_FMT}${DOT}${SUB_FMT}${DOT}${BG_FMT}${DOT}${SB}${DOT}${SESS_FMT}${DOT}${HOST_FMT}"
+LINE2="${CTX}${DOT}${TOK_FMT}${DOT}${MEM_FMT}${DOT}${DISK_FMT}${DOT}${SKILLS_FMT}${DOT}${MCP_FMT}${DOT}${FILES_FMT}${DOT}${SUB_FMT}${DOT}${BG_FMT}${DOT}${ART_FMT}${DOT}${SB}${DOT}${SESS_FMT}${DOT}${HOST_FMT}"
 
 if [ "$COLS" -ge 120 ]; then
   echo -e "${LINE1}${CLR_GRAY}  │  ${R}${LINE2}"
 elif [ "$COLS" -ge 80 ]; then
-  LINE2_MED="${CTX}${DOT}${TOK_FMT}${DOT}${MEM_FMT}${DOT}${DISK_FMT}${DOT}${SB}${DOT}${SESS_FMT}"
+  LINE2_MED="${CTX}${DOT}${TOK_FMT}${DOT}${MEM_FMT}${DOT}${SKILLS_FMT}${DOT}${MCP_FMT}${DOT}${FILES_FMT}${DOT}${SUB_FMT}${DOT}${SB}"
   echo -e "${CLR_GRAY}╭─${R} ${LINE1}"
   echo -e "${CLR_GRAY}╰─${R} ${LINE2_MED}"
 else
-  LINE2_NAR="${CTX}${DOT}${TOK_FMT}${DOT}${MEM_FMT}"
+  LINE2_NAR="${CTX}${DOT}${TOK_FMT}${DOT}${FILES_FMT}${DOT}${SUB_FMT}"
   echo -e "${LINE1}"
   echo -e "${LINE2_NAR}"
 fi
