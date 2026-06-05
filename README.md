@@ -22,17 +22,18 @@ Rather than relying on basic ANSI 16-color escapes, we utilize **truecolor (RGB)
 | **Overlay0**| `#6c7086` | `\033[38;2;108;112;134m` | Dimmed labels, Separators (`│`, `╱`, `·`) |
 
 ---
-
 ## ✨ Features
 
 *   **🎨 Catppuccin Mocha palette:** Native integration with truecolor terminal schemes.
 *   **📂 Direct Path Awareness:** Displays your current directory elegantly in the status bar (e.g. ` ~` or ` ~/workspace/project`), with smart home-directory truncation to save valuable line space.
-*   **🌳 Dual VCS Context (Git & Yadm):** Automatically shows your Git branch and modified file count (` master (3Δ)`). If you are in your home folder, it automatically falls back to tracking **Yadm** dotfile changes!
+*   **🌳 Dual VCS Context (Git & Yadm):** Automatically shows your Git branch and modified file count (` master (3Δ)`), plus the VCS project client name (e.g., `[antigravity-config]`). If you are in your home folder, it automatically falls back to tracking **Yadm** dotfile changes!
 *   **🧠 Dynamic Context Bar with Warning Thresholds:**
     *   **🟢 Green (Safe):** Context usage under `35%`
     *   **🟡 Yellow (Warning):** Context usage between `35%` and `50%`
     *   **🔴 Red (Critical):** Context usage at `50%` or above
+*   **󰛵 Caching Metrics:** Displays real-time **Cache Reads** (`cache_read_input_tokens`) as a highlight (e.g. `(󰛵 20.8k cached)`) next to token counts, visualizing speed and token savings!
 *   **󰌨 Live Token Usage:** Displays total accumulated tokens (`󰌨 103.7k in / 38.8k out`) using optimized pure-Bash formatting arithmetic (no external program lag).
+*   **↔️ Starship-Style Dynamic Right-Alignment:** Computes visible string length (safely stripping escape codes) and dynamically pads space to push system stats and badges perfectly to the right side of the pane—matching your Starship prompt's ergonomics!
 *   **💻 System Performance Stats:** Real-time system monitoring:
     *   `󰍛 % RAM` (parsed directly from `/proc/meminfo` via zero-overhead Bash built-ins)
     *   `󰋊 % DISK` (monitors disk space/quota on `/`)
@@ -40,8 +41,10 @@ Rather than relying on basic ANSI 16-color escapes, we utilize **truecolor (RGB)
     *   `🎓 skills`: Total available skills dynamically scanned from active plugins (e.g. `🎓 32`).
     *   `🔌 mcp`: Total active/configured MCP server endpoints (e.g. `🔌 4`).
     *   `📁 files`: Real-time ratio of modified context files vs total tracked workspace files (e.g. `📁 6/44`).
-    *   `👥 subagents`: Active session subagents displayed as a ratio of active jobs to total available subagent types (e.g. `👥 1/2`).
-*   **🆔 Identity & Sandboxing:** Clear badges indicating Sandbox state (` ON` / ` OFF`), first-8 digits of your AI session UUID (`🆔 7316533b`), and VM hostname.
+    *   `👥 subagents`: Active session subagents with their live subagent names and statuses (e.g. `👥 1/2 [research:idle]`).
+    *   `⚙️ tasks`: Detailed counts of active background tasks with command names (e.g. `⚙️ 1 [dev]`).
+    *   `artifacts`: Produced artifacts and counts with type metadata (e.g. `󰧮 3 [html]`).
+*   **🆔 Identity & Sandboxing:** Clear badges indicating Sandbox state with network availability (` ON (🌐 net)` / ` ON (🔒 loc)` / ` OFF`), first-8 digits of your AI session UUID (`🆔 7316533b`), VM hostname, email address, and plan tier (`Pro`).
 *   **🖥️ Space-Saving Tab Titles:** An upgraded terminal window/tab title showing `Emoji State | Contracted-Directory (Branch) | ctx % [Background-Jobs]`. **Completely model-less** to save massive space in horizontal splits.
 *   **⚡ Zero-Latency Performance:** High-performance design. The statusline and title scripts extract all session metadata in a **single `jq` invocation**, utilizing pure Bash arithmetic for all calculations to prevent terminal lag during fast commands.
 
@@ -52,23 +55,24 @@ Rather than relying on basic ANSI 16-color escapes, we utilize **truecolor (RGB)
 The bottom status line dynamically shifts layout styles depending on your active terminal size (columns count), which is incredibly helpful when working with multiple horizontal or vertical pane splits.
 
 ### 1. Wide Layout (columns >= 120)
-*Single-line complete development dashboard:*
+*Starship-style, right-aligned full widescreen dashboard:*
 ```text
-● READY ╱  Gemini 3.5 Flash ╱  main (3Δ)  │  ctx █▓░░░ 5.9% (3.8k/0.5k) ·  42% RAM ·  18% DISK ·  ON · 🆔 7316533b ·  localhost
+╭─ 😴 IDLE ╱ 󰚩 Gemini 3.5 Flash ╱  ~/workspace/antigravity-config ╱  main [antigravity-config] ─────────────  ─╮
+╰─ ctx ▓········· 8.4% · tokens 󰌨 88.2k/61.0k (󰛵 20.8k cached) · files 📁 2/5 · subagents 👥 0/2 · tasks 0 · sandbox  ON (🌐 net) id 🆔 7316533b ─╯
 ```
 
 ### 2. Medium Layout (columns >= 80 and < 120)
-*Compact double-line framed layout for standard splits:*
+*Compact double-line framed layout for standard vertical splits:*
 ```text
-╭─ ● READY ╱  Gemini 3.5 Flash ╱  main (3Δ)
-╰─ ctx █▓░░░ 5.9% ·  42% ·  18% ·  ON · 🆔 7316533b
+╭─ 😴 IDLE ╱ 󰚩 Gemini 3.5 Flash ╱  …/antigravity-config ╱  main* (2Δ) ─────────  ─╮
+╰─ ctx ▓········· 8.4% · tokens 󰌨 88.2k/61.0k · files 📁 2/5 · subagents 👥 0/2 · sandbox  ON id 🆔 7316533b ─╯
 ```
 
 ### 3. Narrow Layout (columns < 80)
-*Ultra-compact minimalist status line for small tiles:*
+*Ultra-compact minimalist status line for small tile configurations:*
 ```text
-● READY ╱  main
-ctx 5.9% ·  42%
+😴 IDLE ╱ 󰚩 Gemini 3.5 Flash ╱  …/antigravity-config
+ctx ▓········· 8.4% · tokens 󰌨 88.2k/61.0k · files 📁 2/5
 ```
 
 ---
