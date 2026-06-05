@@ -136,8 +136,8 @@ else
 fi
 
 # ─── Compute AI Workspace Resources (Skills, MCP, Context Files, Subagents) ──
-# Count available skills
-SKILLS_AVAIL=$(find ~/.gemini/antigravity-cli/plugins/ -mindepth 3 -maxdepth 3 -type d -path "*/skills/*" 2>/dev/null | wc -l || echo 0)
+# Count available skills (aggregating and deduplicating unique skill names across all load paths)
+SKILLS_AVAIL=$(find ~/.gemini/antigravity-cli/plugins/ ~/.gemini/skills/ ~/.gemini/config/plugins/ ~/.agents/skills/ -name "SKILL.md" 2>/dev/null | awk -F'/' '{print $(NF-1)}' | sort -u | wc -l || echo 0)
 
 # Count configured MCP servers
 MCP_AVAIL=$(jq -s 'map(.mcpServers | keys) | flatten | length' ~/.gemini/antigravity-cli/plugins/*/mcp_config.json 2>/dev/null || echo 0)
