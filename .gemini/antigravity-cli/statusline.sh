@@ -118,6 +118,14 @@ if hash df 2>/dev/null; then
   DISK_PCT=$(df -h / | awk 'NR==2 {print $5}' | tr -d '%' || echo 0)
 fi
 
+# ─── Fallback Git detection if CLI JSON did not provide it ───────────────────
+if [ -z "$VCS_BRANCH" ]; then
+  if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    VCS_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    VCS_TYPE="git"
+  fi
+fi
+
 # ─── Compute Code Changes (Git/Yadm status porcelain) ─────────────────────────
 CHANGES_STR=""
 changes_count=0
