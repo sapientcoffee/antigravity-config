@@ -20,6 +20,13 @@ CLR_GRAY="\033[38;2;108;112;134m"     # Overlay0
 CLR_SURFACE="\033[38;2;88;91;112m"    # Surface1 (dimmer)
 
 # ─── Parse JSON from stdin (Single jq pass for performance) ──────────────────
+# Read stdin safely with fallback for empty or non-JSON payloads
+DATA=$(cat)
+if [[ ! "$DATA" =~ ^[[:space:]]*\{ ]]; then
+  DATA='{"agent_state":"idle"}'
+fi
+
+# ─── Parse JSON from stdin (Single jq pass for performance) ──────────────────
 {
   read -r STATE
   read -r USED_PCT
@@ -51,7 +58,7 @@ CLR_SURFACE="\033[38;2;88;91;112m"    # Surface1 (dimmer)
   read -r ARTIFACTS_DETAILS
   read -r _ # Dummy read for END token to prevent trailing newline trimming issues
 } <<< "$(
-  jq -r '
+  echo "$DATA" | jq -r '
     (.agent_state // "idle"),
     (.context_window.used_percentage // 0),
     (.vcs.branch // ""),
