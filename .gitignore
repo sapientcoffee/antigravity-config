@@ -1,0 +1,92 @@
+# ==========================================
+# Sensible Git Defaults for Antigravity Config
+# ==========================================
+
+# --- OS & System Files ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# --- Editors and IDEs ---
+# VS Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/code-actions.json
+
+# IntelliJ / WebStorm / PyCharm
+.idea/
+*.iws
+*.iml
+*.ipr
+
+# Vim & Emacs
+*~
+*.swp
+*.swo
+*.swn
+.netrwhist
+# Emacs
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+elpa/
+*.elc
+xmldb/
+
+# --- Shell & Terminal ---
+# Command history, logs, or local temp files
+*.log
+*.log.[0-9]
+*.sh.local
+*.sh.env
+
+# --- Local Environment & Secrets ---
+# Keep credentials, secrets, and local overrides out of the repo!
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.secret
+*.pem
+*.key
+*.cert
+
+# --- Development / Package Managers ---
+# In case packages or virtual environments are used locally
+node_modules/
+jspm_packages/
+.npm/
+.eslintcache
+.parcel-cache/
+.next/
+out/
+build/
+dist/
+
+# Python Virtual Environments & Caches
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# --- Antigravity CLI specific overrides ---
+# Ensure that the actual config files are always tracked and never ignored!
+!.gemini/
+!.gemini/antigravity-cli/
+!.gemini/antigravity-cli/settings.json
+!.gemini/antigravity-cli/statusline.sh
+!.gemini/antigravity-cli/title.sh
