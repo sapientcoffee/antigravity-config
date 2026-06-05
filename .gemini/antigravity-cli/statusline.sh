@@ -49,6 +49,7 @@ CLR_SURFACE="\033[38;2;88;91;112m"    # Surface1 (dimmer)
   read -r SUBAGENTS_DETAILS
   read -r BG_TASKS_DETAILS
   read -r ARTIFACTS_DETAILS
+  read -r _ # Dummy read for END token to prevent trailing newline trimming issues
 } <<< "$(
   jq -r '
     (.agent_state // "idle"),
@@ -78,8 +79,9 @@ CLR_SURFACE="\033[38;2;88;91;112m"    # Surface1 (dimmer)
     (.vcs.client // ""),
     (if .subagents | type == "array" and (.subagents | length) > 0 then ([.subagents[] | (.name // "agent") + ":" + (.status // "idle")] | join(",")) else "" end),
     (if .background_tasks | type == "array" and (.background_tasks | length) > 0 then ([.background_tasks[] | .name // "task"] | join(",")) else "" end),
-    (if .artifacts | type == "array" and (.artifacts | length) > 0 then ([.artifacts[] | .type // "file"] | join(",")) else "" end)
-  ' 2>/dev/null || printf "idle\n0\n\nfalse\nfalse\n0\n0\n0\n\n80\n\n0\n0\n\n0\nfalse\n\nfalse\ngit\n\n\n\n\n0\n\n\n\n"
+    (if .artifacts | type == "array" and (.artifacts | length) > 0 then ([.artifacts[] | .type // "file"] | join(",")) else "" end),
+    "END"
+  ' 2>/dev/null || printf "idle\n0\n\nfalse\nfalse\n0\n0\n0\n\n80\n\n0\n0\n\n0\nfalse\n\nfalse\ngit\n\n\n\n\n0\n\n\n\nEND"
 )"
 
 # ─── Computed Values & Sanitization ──────────────────────────────────────────
