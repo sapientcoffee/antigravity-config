@@ -15,13 +15,23 @@
       "command(uname)",
       "command(cat)",
       "command(grep)",
-      "command(ls)"
+      "command(ls)",
+      "command(wc)",
+      "command(find)",
+      "command(tail)",
+      "command(ps)",
+      "command(env)",
+      "command(gh)"
+    ],
+    "deny": [
+      "command(rm -rf)"
     ]
   },
   "showFeedbackSurvey": false,
   "statusLine": {
     "type": "command",
-    "command": "~/.gemini/antigravity-cli/statusline.sh",
+    "command": "~/.gemini/antigravity-cli/starship-statusline.sh",
+    // "command": "~/.gemini/antigravity-cli/statusline.sh",
     "enabled": true
   },
   "title": {
