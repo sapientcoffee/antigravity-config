@@ -54,6 +54,7 @@ fi
   read -r EMAIL
   read -r CACHE_READ_TOKENS
   read -r VCS_CLIENT
+  read -r EXECUTION_MODE
   read -r _ # Dummy read for END token
 } <<< "$(
   echo "$DATA" | jq -r '
@@ -83,8 +84,9 @@ fi
     (.email // ""),
     (.context_window.current_usage.cache_read_input_tokens // 0),
     (.vcs.client // ""),
+    (.execution_mode // ""),
     "END"
-  ' 2>/dev/null || printf "idle\n0\n\nfalse\nfalse\n0\n0\n0\n\n80\n\n0\n0\n0\n\n0\nfalse\n\nfalse\ngit\n\n\n\n\n0\n\nEND"
+  ' 2>/dev/null || printf "idle\n0\n\nfalse\nfalse\n0\n0\n0\n\n80\n\n0\n0\n0\n\n0\nfalse\n\nfalse\ngit\n\n\n\n\n0\n\n\nEND"
 )"
 
 # ─── Computed Values & Sanitization ──────────────────────────────────────────
@@ -265,19 +267,44 @@ LINE1="  ${LINE1_LEFT}${SPACES}${TIMESTAMP}  "
 # ─── LINE 2: Antigravity Core Operations ──────────────────────────────────────
 
 # 1. Model & Status Module
-# Format: [󰚩 3.5 Flash (High)  •  󰦛 IDLE]
+# Format: [󰚩 3.5 Flash (High)  •  󰦵 WATCHING] or with execution mode:
+#         [󰚩 3.5 Flash (High)  •  📋 PLANNING  •  󰦵 WATCHING]
 M_NAME="${MODEL:-Gemini 3.5 Flash}"
 M_NAME="${M_NAME#Gemini }"
 M_NAME="${M_NAME#gemini }"
 
+EXEC_MODE_STR=""
+if [ -n "${EXECUTION_MODE:-}" ] && [ "$EXECUTION_MODE" != "null" ]; then
+  case "${EXECUTION_MODE,,}" in
+    planning|plan)
+      EXEC_MODE_STR="${CLR_MAUVE}${B}📋 PLANNING${R}"
+      ;;
+    fast)
+      EXEC_MODE_STR="${CLR_YELLOW}${B}⚡ FAST${R}"
+      ;;
+    accept-edits|accept_edits|auto)
+      EXEC_MODE_STR="${CLR_GREEN}${B}✍️  ACCEPT-EDITS${R}"
+      ;;
+    *)
+      EXEC_MODE_UPPER=$(echo "$EXECUTION_MODE" | tr '[:lower:]' '[:upper:]')
+      EXEC_MODE_STR="${CLR_SKY}${B}🎯 ${EXEC_MODE_UPPER}${R}"
+      ;;
+  esac
+fi
+
+EXEC_MODE_PART=""
+if [ -n "$EXEC_MODE_STR" ]; then
+  EXEC_MODE_PART="  ${CLR_SURFACE}•${R}  ${EXEC_MODE_STR}"
+fi
+
 if [ "$CONFIRM_PENDING" = "true" ]; then
-  STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}  ${CLR_SURFACE}•${R}  ${CLR_RED}${B}󰒃  CONFIRMING${CLR_WHITE}]${R}"
+  STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_RED}${B}󰒃  CONFIRMING${CLR_WHITE}]${R}"
 else
   case "$STATE" in
-    idle)     STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}  ${CLR_SURFACE}•${R}  ${CLR_GRAY}󰦵  WATCHING${CLR_WHITE}]${R}" ;;
+    idle)     STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GRAY}󰦵  WATCHING${CLR_WHITE}]${R}" ;;
     working|thinking|tool_use|initializing)
-              STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}  ${CLR_SURFACE}•${R}  ${CLR_GREEN}${B}󱑮  WORKING${CLR_WHITE}]${R}" ;;
-    *)        STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}  ${CLR_SURFACE}•${R}  ${CLR_WHITE}󰖦  $(echo "$STATE" | tr '[:lower:]' '[:upper:]')${CLR_WHITE}]${R}" ;;
+              STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GREEN}${B}󱑮  WORKING${CLR_WHITE}]${R}" ;;
+    *)        STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_WHITE}󰖦  $(echo "$STATE" | tr '[:lower:]' '[:upper:]')${CLR_WHITE}]${R}" ;;
   esac
 fi
 
