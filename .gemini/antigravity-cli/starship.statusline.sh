@@ -19,6 +19,7 @@ CLR_WHITE="\033[38;2;202;211;245m"
 CLR_GRAY="\033[38;2;110;115;141m"     # Overlay0
 CLR_SURFACE="\033[38;2;73;77;100m"    # Surface1 (dimmer)
 CLR_CYAN="\033[38;2;145;215;227m"
+CLR_LAVENDER="\033[38;2;183;189;248m"
 
 # ─── Read JSON from stdin Safely ─────────────────────────────────────────────
 DATA=$(cat)
@@ -84,7 +85,7 @@ fi
     (.email // ""),
     (.context_window.current_usage.cache_read_input_tokens // 0),
     (.vcs.client // ""),
-    (.execution_mode // ""),
+    (.cycle_mode // .execution_mode // .agent_mode // .agentMode // ""),
     "END"
   ' 2>/dev/null || printf "idle\n0\n\nfalse\nfalse\n0\n0\n0\n\n80\n\n0\n0\n0\n\n0\nfalse\n\nfalse\ngit\n\n\n\n\n0\n\n\nEND"
 )"
@@ -266,14 +267,83 @@ LINE1="  ${LINE1_LEFT}${SPACES}${TIMESTAMP}  "
 
 # ─── LINE 2: Antigravity Core Operations ──────────────────────────────────────
 
+# 0. Active Persona Module (agyctl)
+ACTIVE_PERSONA=""
+if [ -f "$HOME/.gemini/config/.active_persona" ]; then
+  ACTIVE_PERSONA=$(tr -d '[:space:]' < "$HOME/.gemini/config/.active_persona" 2>/dev/null || true)
+elif command -v agyctl >/dev/null 2>&1; then
+  ACTIVE_PERSONA=$(agyctl current 2>/dev/null | awk -F '[()]' '/Active Persona/ {print $2}' | tr -d '[:space:]')
+fi
+ACTIVE_PERSONA="${ACTIVE_PERSONA:-core}"
+
+PERSONA_EMOJI=""
+PERSONA_JSON="$HOME/.gemini/personas/${ACTIVE_PERSONA}.json"
+if [ -f "$PERSONA_JSON" ]; then
+  PERSONA_EMOJI=$(jq -r '(.emoji // .icon // "")' "$PERSONA_JSON" 2>/dev/null || true)
+fi
+
+case "${ACTIVE_PERSONA,,}" in
+  core)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="🪨"; fi
+    PERSONA_CLR="$CLR_CYAN"
+    ;;
+  architect)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="🏛️"; fi
+    PERSONA_CLR="$CLR_MAUVE"
+    ;;
+  fullstack)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="🌐"; fi
+    PERSONA_CLR="$CLR_SKY"
+    ;;
+  gcp-sre)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="☁️"; fi
+    PERSONA_CLR="$CLR_GREEN"
+    ;;
+  stitch)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="🎨"; fi
+    PERSONA_CLR="$CLR_PEACH"
+    ;;
+  adk-dev)
+    if [ -z "$PERSONA_EMOJI" ]; then PERSONA_EMOJI="🤖"; fi
+    PERSONA_CLR="$CLR_YELLOW"
+    ;;
+  *)
+    if [ -z "$PERSONA_EMOJI" ]; then
+      case "${ACTIVE_PERSONA,,}" in
+        *eval*|*test*|*bench*)      PERSONA_EMOJI="🧪" ;;
+        *sec*|*audit*|*redteam*)    PERSONA_EMOJI="🛡️" ;;
+        *db*|*sql*|*data*)          PERSONA_EMOJI="🗄️" ;;
+        *doc*|*scribe*|*write*)     PERSONA_EMOJI="✍️" ;;
+        *ops*|*infra*|*k8s*)        PERSONA_EMOJI="⚙️" ;;
+        *coffee*|*brew*|*roast*)    PERSONA_EMOJI="☕" ;;
+        *ai*|*agent*|*bot*)         PERSONA_EMOJI="🤖" ;;
+        *ui*|*front*|*web*)         PERSONA_EMOJI="🌐" ;;
+        *)                          PERSONA_EMOJI="🎭" ;; # Fallback for unknown personas
+      esac
+    fi
+    PERSONA_CLR="$CLR_LAVENDER"
+    ;;
+esac
+
+PERSONA_LABEL=$(echo "$ACTIVE_PERSONA" | tr '[:lower:]' '[:upper:]')
+PERSONA_PART=""
+if [ -n "$PERSONA_LABEL" ]; then
+  PERSONA_PART="  ${CLR_SURFACE}•${R}  ${PERSONA_CLR}${B}${PERSONA_EMOJI} ${PERSONA_LABEL}${R}"
+fi
+
 # 1. Model & Status Module
-# Format: [󰚩 3.5 Flash (High)  •  󰦵 WATCHING] or with execution mode:
-#         [󰚩 3.5 Flash (High)  •  📋 PLANNING  •  󰦵 WATCHING]
+# Format: [󰚩 3.5 Flash (High)  •  🪨 CORE  •  📋 PLANNING  •  󰦵 WATCHING]
 M_NAME="${MODEL:-Gemini 3.5 Flash}"
 M_NAME="${M_NAME#Gemini }"
 M_NAME="${M_NAME#gemini }"
 
 EXEC_MODE_STR=""
+if [ -z "${EXECUTION_MODE:-}" ] || [ "$EXECUTION_MODE" = "null" ]; then
+  if [ -f "$HOME/.gemini/antigravity-cli/settings.json" ]; then
+    EXECUTION_MODE=$(jq -r '(.agentMode // .agent_mode // .mode // "")' "$HOME/.gemini/antigravity-cli/settings.json" 2>/dev/null || true)
+  fi
+fi
+
 if [ -n "${EXECUTION_MODE:-}" ] && [ "$EXECUTION_MODE" != "null" ]; then
   case "${EXECUTION_MODE,,}" in
     planning|plan)
@@ -284,6 +354,9 @@ if [ -n "${EXECUTION_MODE:-}" ] && [ "$EXECUTION_MODE" != "null" ]; then
       ;;
     accept-edits|accept_edits|auto)
       EXEC_MODE_STR="${CLR_GREEN}${B}✍️  ACCEPT-EDITS${R}"
+      ;;
+    default|normal|standard)
+      EXEC_MODE_STR="${CLR_BLUE}${B}🎯 DEFAULT${R}"
       ;;
     *)
       EXEC_MODE_UPPER=$(echo "$EXECUTION_MODE" | tr '[:lower:]' '[:upper:]')
@@ -298,13 +371,13 @@ if [ -n "$EXEC_MODE_STR" ]; then
 fi
 
 if [ "$CONFIRM_PENDING" = "true" ]; then
-  STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_RED}${B}󰒃  CONFIRMING${CLR_WHITE}]${R}"
+  STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${PERSONA_PART}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_RED}${B}󰒃  CONFIRMING${CLR_WHITE}]${R}"
 else
   case "$STATE" in
-    idle)     STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GRAY}󰦵  WATCHING${CLR_WHITE}]${R}" ;;
+    idle)     STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${PERSONA_PART}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GRAY}󰦵  WATCHING${CLR_WHITE}]${R}" ;;
     working|thinking|tool_use|initializing)
-              STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GREEN}${B}󱑮  WORKING${CLR_WHITE}]${R}" ;;
-    *)        STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_WHITE}󰖦  $(echo "$STATE" | tr '[:lower:]' '[:upper:]')${CLR_WHITE}]${R}" ;;
+              STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${PERSONA_PART}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_GREEN}${B}󱑮  WORKING${CLR_WHITE}]${R}" ;;
+    *)        STATUS_BADGE="${CLR_WHITE}[󰚩  ${M_NAME}${PERSONA_PART}${EXEC_MODE_PART}  ${CLR_SURFACE}•${R}  ${CLR_WHITE}󰖦  $(echo "$STATE" | tr '[:lower:]' '[:upper:]')${CLR_WHITE}]${R}" ;;
   esac
 fi
 
