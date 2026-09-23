@@ -121,7 +121,7 @@ fi
 # ─── Fallback Git detection if CLI JSON did not provide it ───────────────────
 if [ -z "$VCS_BRANCH" ]; then
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    VCS_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    VCS_BRANCH=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || true)
     VCS_TYPE="git"
   fi
 fi
@@ -130,13 +130,13 @@ fi
 CHANGES_STR=""
 changes_count=0
 if [ -n "$VCS_BRANCH" ]; then
-  changes_count=$(git status --porcelain 2>/dev/null | wc -l | tr -d '[:space:]')
+  changes_count=$( (git status --porcelain 2>/dev/null || true) | wc -l | tr -d '[:space:]')
   if [[ "$changes_count" =~ ^[0-9]+$ ]] && [ "$changes_count" -gt 0 ]; then
     CHANGES_STR="${changes_count}Δ"
   fi
 else
   if [ "$CWD" = "$HOME" ] && hash yadm 2>/dev/null; then
-    changes_count=$(yadm status --porcelain 2>/dev/null | wc -l | tr -d '[:space:]')
+    changes_count=$( (yadm status --porcelain 2>/dev/null || true) | wc -l | tr -d '[:space:]')
     if [[ "$changes_count" =~ ^[0-9]+$ ]] && [ "$changes_count" -gt 0 ]; then
       CHANGES_STR="${changes_count}Δ"
     fi
@@ -157,8 +157,8 @@ SUBAGENTS_AVAIL=2
 FILES_DIRTY=0
 FILES_AVAIL=0
 if [ -n "$VCS_BRANCH" ]; then
-  FILES_DIRTY=$(git status --porcelain 2>/dev/null | wc -l | tr -d '[:space:]')
-  FILES_AVAIL=$(git ls-files 2>/dev/null | wc -l | tr -d '[:space:]')
+  FILES_DIRTY=$( (git status --porcelain 2>/dev/null || true) | wc -l | tr -d '[:space:]')
+  FILES_AVAIL=$( (git ls-files 2>/dev/null || true) | wc -l | tr -d '[:space:]')
 else
   if [ "$CWD" = "$HOME" ] && hash yadm 2>/dev/null; then
     FILES_DIRTY=$(yadm status --porcelain 2>/dev/null | wc -l | tr -d '[:space:]')

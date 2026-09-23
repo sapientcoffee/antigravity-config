@@ -166,7 +166,7 @@ format_git() {
   # Check ahead/behind if we are in a Git repo
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
     local status_sb
-    status_sb=$(git status -sb 2>/dev/null | head -n 1)
+    status_sb=$( (git status -sb 2>/dev/null || true) | head -n 1)
     if [[ "$status_sb" =~ \[ahead\ ([0-9]+)\] ]]; then
       git_str="${git_str} ⇡${BASH_REMATCH[1]}"
     elif [[ "$status_sb" =~ \[behind\ ([0-9]+)\] ]]; then
@@ -187,13 +187,13 @@ format_git() {
 if [ -z "$VCS_BRANCH" ] || [ "$VCS_BRANCH" = "null" ]; then
   VCS_BRANCH=""
   if git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-    VCS_BRANCH=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+    VCS_BRANCH=$(git branch --show-current 2>/dev/null || git rev-parse --short HEAD 2>/dev/null || true)
     VCS_TYPE="git"
   fi
 fi
 
 if [ -n "$VCS_BRANCH" ] && [ "${VCS_DIRTY:-}" != "true" ]; then
-  if [ -n "$(git status --porcelain 2>/dev/null)" ]; then
+  if [ -n "$(git status --porcelain 2>/dev/null || true)" ]; then
     VCS_DIRTY="true"
   fi
 fi
